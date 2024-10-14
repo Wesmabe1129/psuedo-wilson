@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login/Register Interface</title>
+    <style>
+        /* Basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            display: none;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            display: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+            }
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .response pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login/Register Interface</h1>
+
+        <!-- Toggle between Register and Log In -->
+        <div class="button-container">
+            <button id="showRegister">Register</button>
+            <button id="showLogin">Log In</button>
+        </div>
+
+        <!-- Register Form -->
+        <form id="registerForm">
+            <div class="form-group">
+                <h2>Register</h2>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+
+        <!-- Log-in Form -->
+        <form id="loginForm">
+            <div class="form-group">
+                <h2>Log In</h2>
+                <label for="title">Logo Title:</label>
+                <input type="text" id="title" name="title" required />
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+
+        <!-- Response Section -->
+        <div id="response" class="response">
+            <h3>Response Data:</h3>
+            <pre id="responseData"></pre>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const registerForm = document.getElementById('registerForm');
+        const loginForm = document.getElementById('loginForm');
+        const responseDiv = document.getElementById('response');
+        const responseData = document.getElementById('responseData');
+        const showRegisterButton = document.getElementById('showRegister');
+        const showLoginButton = document.getElementById('showLogin');
+
+        // Toggle between Register and Login forms
+        showRegisterButton.addEventListener('click', () => {
+            registerForm.style.display = 'flex';
+            loginForm.style.display = 'none';
+            responseDiv.style.display = 'none';
+        });
+
+        showLoginButton.addEventListener('click', () => {
+            loginForm.style.display = 'flex';
+            registerForm.style.display = 'none';
+            responseDiv.style.display = 'none';
+        });
+
+        // Example handling JSON parsing carefully
+        async function handleResponse(response) {
+            if (response.ok) {
+                const data = await response.json();
+                displayResponse(data);
+            } else {
+                const errorText = await response.text(); // Handle error message as text
+                console.error('Error:', errorText);
+                displayResponse({ message: `Error: ${response.status} ${errorText}` });
+            }
+        }
+
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const response = await fetch('http://localhost:3000/v1/register', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }
+            });
+            await handleResponse(response);
+        });
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const title = document.getElementById('title').value;
+            const response = await fetch('http://localhost:3000/v1/log-in', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            await handleResponse(response);
+        });
+
+
+        // Function to display the JSON response on the page
+        function displayResponse(data) {
+            responseDiv.style.display = 'block';
+            responseData.textContent = JSON.stringify(data, null, 2); // Format the JSON nicely
+        }
+    </script>
+</body>
+</html>

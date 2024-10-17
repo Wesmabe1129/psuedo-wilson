@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login & Sign Up</title>
+    <link href="css/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const API_URL = 'http://localhost:3000';
+      const root = document.getElementById('root');
+
+      function showLogin() {
+        root.innerHTML = `
+          <form id="login" action="#" method="post">
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password">
+            <button type="submit">Login</button>
+            <p>Don't have an account? <a href="#" id="showSignUp">Sign Up</a></p>
+          </form>
+        `;
+
+        document.getElementById("login").addEventListener('submit', handleLogin);
+        document.getElementById("showSignUp").addEventListener('click', showSignUp);
+      }
+
+      function showSignUp() {
+        root.innerHTML = `
+          <form id="signup" action="#" method="post">
+            <label for="username">Username</label>
+            <input type="text" name="username" value="" id="username"><br><br>
+            <label for="password">Password</label>
+            <input type="password" name="password" value="" id="password"><br><br>
+            <input type="text" name="fullname" value="" id="fullname"><br><br>
+            <input type="checkbox" name="show_password" value="" id="show_password"> Show Password
+            <button type="submit">Create Account</button>
+          </form>
+          <p>Already have an account?</p>
+
+          <br>
+          <br>
+          <form id="login" action="#" method="post">
+            <input type="text" name="username" value="" placeholder="Username" id="username">
+            <input type="password" name="password" value="" placeholder="Password" id="password">
+            <br><br>
+            <button type="submit">Login</button>
+            <button type="submit">Forgot Password?</button>
+          </form>
+        `;
+
+        document.getElementById("signup").addEventListener('submit', handleSignUp);
+        document.getElementById("showLogin").addEventListener('click', showLogin);
+      }
+
+      function handleLogin(e) {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const payload = JSON.stringify(Object.fromEntries(formData));
+
+        fetch(`${API_URL}/v1/account/login`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            apikey: 'hello',
+          },
+          body: payload,
+        })
+        .then(data => data.json())
+        .then(data => {
+          if (data.success) {
+            localStorage.setItem('token', data.data.token);
+            root.innerHTML = '';
+            loadHomeFeeds();
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(err => console.log(err));
+      }
+
+      function handleSignUp(e) {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const payload = JSON.stringify(Object.fromEntries(formData));
+
+        fetch(`${API_URL}/v1/account`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            apikey: 'hello',
+          },
+          body: payload,
+        })
+        .then(data => data.json())
+        .then(data => {
+          if (data.success) {
+            alert('Account created successfully. Please login.');
+            showLogin();
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(err => console.log(err));
+      }
+
+      function loadHomeFeeds() {
+          fetch(`${API_URL}/v1/account`, {
+              headers: {
+                  'accept': 'application/json',
+                  apikey: 'hello',
+                  token: localStorage.getItem('token'),
+              }
+          })
+          .then(res => res.json())
+          .then(data => {
+              if (data?.success) {
+                  fetch(`${API_URL}/v1/posts?limits=10&offset=0&sortBy=relevancy`, {
+                      headers: {
+                          'accept': 'application/json',
+                          apikey: 'hello',
+                          token: localStorage.getItem('token'),
+                      }
+                  })
+                  .then(res => {
+                      if (res.status === 204) {
+                          // No content - show a friendly message
+                          root.innerHTML = `
+                              <nav class="navbar">
+                                  <button id="nav-search">Search</button>
+                                  <button id="nav-home">Home</button>
+                                  <button id="nav-create">Create</button>
+                                  <button id="nav-react">React</button>
+                                  <button id="nav-profile">Profile</button>
+                              </nav>
+                              <div class="content">
+                                  <h3>HOME</h3>
+                                  <p>No posts available at the moment. Check back later!</p>
+                              </div>
+                          `;
+
+                          // Set up event listeners for navigation buttons
+                          document.getElementById('nav-search').addEventListener('click', handleSearch);
+                          document.getElementById('nav-create').addEventListener('click', handleCreate);
+                          document.getElementById('nav-react').addEventListener('click', handleReact);
+                          document.getElementById('nav-profile').addEventListener('click', handleProfile);
+                          return;
+                      }
+                      return res.json();
+                  })
+                  .then(postsData => {
+                      if (postsData?.success) {
+                          const posts = postsData.data.map(post => `
+                              <div class="post">
+                                  <h2>${post.title}</h2>
+                                  <p>${post.content}</p>
+                                  <button onclick="loadPost('${post.id}')">View Post</button>
+                              </div>
+                          `).join('');
+                          
+                          root.innerHTML = `
+                              <nav class="navbar">
+                                  <button id="nav-search">Search</button>
+                                  <button id="nav-home">Home</button>
+                                  <button id="nav-create">Create</button>
+                                  <button id="nav-react">React</button>
+                                  <button id="nav-profile">Profile</button>
+                              </nav>
+                              <div class="content">
+                                  <h3>HOME</h3>
+                                  ${posts}
+                              </div>
+                          `;
+
+                          // Set up event listeners for navigation buttons
+                          document.getElementById('nav-search').addEventListener('click', handleSearch);
+                          document.getElementById('nav-create').addEventListener('click', handleCreate);
+                          document.getElementById('nav-react').addEventListener('click', handleReact);
+                          document.getElementById('nav-profile').addEventListener('click', handleProfile);
+                      } else {
+                          alert('Failed to load posts. Please try again.');
+                          localStorage.removeItem('token');
+                          showLogin();
+                      }
+                  })
+                  .catch(err => {
+                      console.log(err);
+                      alert('An error occurred while loading posts. Please try again later.');
+                      localStorage.removeItem('token');
+                      showLogin();
+                  });
+              } else {
+                  // Remove token and redirect to login only if the account verification fails
+                  localStorage.removeItem('token');
+                  showLogin();
+              }
+          })
+          .catch(err => {
+              console.log(err);
+              alert('An error occurred while verifying account. Please try again later.');
+          });
+      }
+
+
+      function loadPost(postId) {
+        fetch(`${API_URL}/v1/posts/${postId}`, {
+          headers: {
+            'accept': 'application/json',
+            apikey: 'hello',
+            token: localStorage.getItem('token'),
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.success) {
+            const post = data.data;
+            root.innerHTML = `
+              <div class="post">
+                <h2>${post.title}</h2>
+                <p>${post.content}</p>
+                <button onclick="loadComments('${post.id}')">View Comments</button>
+              </div>
+            `;
+          }
+        })
+        .catch(err => console.log(err));
+      }
+
+      function loadComments(postId) {
+        fetch(`${API_URL}/v1/posts/${postId}/comments`, {
+          headers: {
+            'accept': 'application/json',
+            apikey: 'hello',
+            token: localStorage.getItem('token'),
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.success) {
+            const comments = data.data.map(comment => `
+              <div class="comment">
+                <p>${comment.content}</p>
+                <button onclick="loadReplies('${postId}', '${comment.id}')">View Replies</button>
+              </div>
+            `).join('');
+            
+            root.innerHTML += `
+              <div class="comments">
+                ${comments}
+              </div>
+            `;
+          }
+        })
+        .catch(err => console.log(err));
+      }
+
+      function loadReplies(postId, commentId) {
+        fetch(`${API_URL}/v1/posts/${postId}/comments/${commentId}/replies`, {
+          headers: {
+            'accept': 'application/json',
+            apikey: 'hello',
+            token: localStorage.getItem('token'),
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.success) {
+            const replies = data.data.map(reply => `
+              <div class="reply">
+                <p>${reply.content}</p>
+              </div>
+            `).join('');
+            
+            root.innerHTML += `
+              <div class="replies">
+                ${replies}
+              </div>
+            `;
+          }
+        })
+        .catch(err => console.log(err));
+      }
+
+      function handleProfile() {
+        localStorage.removeItem('token');
+        showLogin();
+      }
+
+      (() => {
+        if (localStorage.getItem('token')) {
+          loadHomeFeeds();
+        } else {
+          showLogin();
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  background-color: #333;
+  padding: 10px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.navbar button {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+}
+
+.navbar button:hover {
+  background-color: #555;
+}
+
+.content {
+  padding: 20px;
+  padding-bottom: 70px; /* Extra space to ensure content doesn't overlap with navbar */
+}
+
+
+.create-thread-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;  
+  flex-direction: column;
+}
+
+
+/* <form id="create-thread-form">
+  <label>Title: <input type="text" id="thread-title" required></label><br>
+  <label>Body: <textarea id="thread-body" required></textarea></label><br>
+  <button type="submit">Create Thread</button>
+</form> */
